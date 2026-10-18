@@ -38,7 +38,7 @@ module.exports = async function handler(req, res) {
 
   // Vercel rewrite 后 req.url 仍是原始路径,如 /c/cycle/9/264/182.png
   // 路径格式:{a|b|c}/{mapType}/{z}/{x}/{y}.png
-  const [rawUrl, search] = req.url.split('?');
+  const [rawUrl, search = ''] = req.url.split('?');
 
   const parts = rawUrl.split('/').filter(Boolean);
   if (parts.length < 2) {
@@ -56,10 +56,11 @@ module.exports = async function handler(req, res) {
 
   const restPath = parts.slice(1).join('/');
 
-  const target =
-    `https://${sub}.tile.thunderforest.com/${restPath}` +
-    (search ? `?${search}&apikey=` : '?apikey=') +
-    encodeURIComponent(apiKey);
+  // 客户端可能传入 apikey,统一覆盖为环境变量里的 key(保留其它透传参数)
+  const params = new URLSearchParams(search);
+  params.delete('apikey');
+  params.set('apikey', apiKey);
+  const target = `https://${sub}.tile.thunderforest.com/${restPath}?${params.toString()}`;
 
   try {
     const upstream = await fetch(target, {

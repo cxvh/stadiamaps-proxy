@@ -40,7 +40,7 @@ module.exports = async function handler(req, res) {
   // 函数自身被挂在 /api/stadiamaps。路径清洗兼容两种情况:
   // 1. rewrite 后的请求:/tiles/...
   // 2. 直访函数(本地调试):/api/stadiamaps/...
-  const [rawUrl, search] = req.url.split('?');
+  const [rawUrl, search = ''] = req.url.split('?');
 
   let cleanPath = rawUrl;
   if (cleanPath.startsWith('/api')) {
@@ -50,10 +50,11 @@ module.exports = async function handler(req, res) {
     cleanPath = '/tiles' + cleanPath;
   }
 
-  const target =
-    `https://tiles.stadiamaps.com${cleanPath}` +
-    (search ? `?${search}&api_key=` : '?api_key=') +
-    encodeURIComponent(apiKey);
+  // 客户端可能传入 api_key,统一覆盖为环境变量里的 key(保留其它透传参数)
+  const params = new URLSearchParams(search);
+  params.delete('api_key');
+  params.set('api_key', apiKey);
+  const target = `https://tiles.stadiamaps.com${cleanPath}?${params.toString()}`;
 
   try {
     const upstream = await fetch(target, {
