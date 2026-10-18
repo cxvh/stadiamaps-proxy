@@ -1,4 +1,31 @@
+// 域名白名单：可用环境变量 ALLOWED_DOMAINS 覆盖，逗号分隔，支持 *.example.com
+const DEFAULT_DOMAINS = '*.cnb.run,*.cxvh.com,*.allapi.cc';
+const ALLOWED = (process.env.ALLOWED_DOMAINS || DEFAULT_DOMAINS)
+  .split(',')
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+
+function isAllowed(req) {
+  const raw = req.headers.origin || req.headers.referer || '';
+  if (!raw) return false; // 无来源头（直接打开、curl 等）一律拒绝
+  let host;
+  try {
+    host = new URL(raw).hostname;
+  } catch {
+    return false;
+  }
+  return ALLOWED.some((p) =>
+    p.startsWith('*.') ? host === p.slice(2) || host.endsWith(p.slice(1)) : host === p
+  );
+}
+
 export default async function handler(req, res) {
+  if (!isAllowed(req)) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(403).send('Forbidden');
+    return;
+  }
+
   const apiKey = process.env.STADIAMAPS;
   if (!apiKey) {
     res.status(500).send('Missing STADIAMAPS environment variable');
