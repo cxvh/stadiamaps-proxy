@@ -20,6 +20,17 @@ function isAllowed(req) {
 }
 
 export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  // CORS 预检直接应答，不回源
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    res.status(204).end();
+    return;
+  }
+
   if (!isAllowed(req)) {
     res.setHeader('Cache-Control', 'no-store');
     res.status(403).send('Forbidden');
@@ -57,7 +68,6 @@ export default async function handler(req, res) {
       res.setHeader('Cache-Control', 'no-store');
     }
 
-    res.setHeader('Access-Control-Allow-Origin', '*');
     res.send(Buffer.from(await upstream.arrayBuffer()));
   } catch {
     res.setHeader('Cache-Control', 'no-store');
