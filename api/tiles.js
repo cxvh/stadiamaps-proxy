@@ -36,10 +36,12 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  // 获取请求参数与清洗路径
+  // Vercel rewrite 后 req.url 仍是原始路径(如 /tiles/stamen_toner/2/0/2.png),
+  // 函数自身被挂在 /api/tiles。路径清洗兼容两种情况:
+  // 1. rewrite 后的请求:/tiles/...
+  // 2. 直访函数(本地调试):/api/tiles/...
   const [rawUrl, search] = req.url.split('?');
-  
-  // 提取真正的瓦片路径（确保符合 /tiles/xx/xx/xx 结构）
+
   let cleanPath = rawUrl;
   if (cleanPath.startsWith('/api')) {
     cleanPath = cleanPath.substring(4);
@@ -49,7 +51,7 @@ module.exports = async function handler(req, res) {
   }
 
   const target =
-    `https://stadiamaps.com${cleanPath}` +
+    `https://tiles.stadiamaps.com${cleanPath}` +
     (search ? `?${search}&api_key=` : '?api_key=') +
     encodeURIComponent(apiKey);
 
@@ -57,7 +59,7 @@ module.exports = async function handler(req, res) {
     const upstream = await fetch(target, {
       headers: { 'User-Agent': req.headers['user-agent'] || 'stadiamaps-proxy' },
     });
-    
+
     res.status(upstream.status);
     const ct = upstream.headers.get('content-type');
     if (ct) res.setHeader('Content-Type', ct);
