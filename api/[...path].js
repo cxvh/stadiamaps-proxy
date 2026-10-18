@@ -19,7 +19,7 @@ function isAllowed(req) {
   );
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS 头已由 vercel.json 的 headers 在边缘层统一添加，这里只处理预检
   if (req.method === 'OPTIONS') {
     res.status(204).end();
