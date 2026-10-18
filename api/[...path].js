@@ -20,13 +20,8 @@ function isAllowed(req) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
-  // CORS 预检直接应答，不回源
+  // CORS 头已由 vercel.json 的 headers 在边缘层统一添加，这里只处理预检
   if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', '*');
-    res.setHeader('Access-Control-Max-Age', '86400');
     res.status(204).end();
     return;
   }
