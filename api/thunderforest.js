@@ -30,34 +30,40 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const apiKey = process.env.STADIAMAPS;
+  const apiKey = process.env.THUNDERFOREST_MAP_KEY;
   if (!apiKey) {
-    res.status(500).send('Missing STADIAMAPS environment variable');
+    res.status(500).send('Missing THUNDERFOREST_MAP_KEY environment variable');
     return;
   }
 
-  // Vercel rewrite 后 req.url 仍是原始路径(如 /tiles/stamen_toner/2/0/2.png),
-  // 函数自身被挂在 /api/tiles。路径清洗兼容两种情况:
-  // 1. rewrite 后的请求:/tiles/...
-  // 2. 直访函数(本地调试):/api/tiles/...
+  // Vercel rewrite 后 req.url 仍是原始路径,如 /c/cycle/9/264/182.png
+  // 路径格式:{a|b|c}/{mapType}/{z}/{x}/{y}.png
   const [rawUrl, search] = req.url.split('?');
 
-  let cleanPath = rawUrl;
-  if (cleanPath.startsWith('/api')) {
-    cleanPath = cleanPath.substring(4);
-  }
-  if (!cleanPath.startsWith('/tiles')) {
-    cleanPath = '/tiles' + cleanPath;
+  const parts = rawUrl.split('/').filter(Boolean);
+  if (parts.length < 2) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(400).send('Bad Request: path must be /{a|b|c}/{mapType}/{z}/{x}/{y}.png');
+    return;
   }
 
+  const sub = parts[0].toLowerCase();
+  if (!['a', 'b', 'c'].includes(sub)) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(400).send('Bad Request: sub must be one of a, b, c');
+    return;
+  }
+
+  const restPath = parts.slice(1).join('/');
+
   const target =
-    `https://tiles.stadiamaps.com${cleanPath}` +
-    (search ? `?${search}&api_key=` : '?api_key=') +
+    `https://${sub}.tile.thunderforest.com/${restPath}` +
+    (search ? `?${search}&apikey=` : '?apikey=') +
     encodeURIComponent(apiKey);
 
   try {
     const upstream = await fetch(target, {
-      headers: { 'User-Agent': req.headers['user-agent'] || 'stadiamaps-proxy' },
+      headers: { 'User-Agent': req.headers['user-agent'] || 'thunderforest-proxy' },
     });
 
     res.status(upstream.status);

@@ -13,7 +13,23 @@
   "rewrites": [
     {
       "source": "/tiles/:path*",
-      "destination": "/api/tiles"
+      "has": [
+        {
+          "type": "host",
+          "value": "stadiamaps.allapi.cc"
+        }
+      ],
+      "destination": "/api/stadiamaps"
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "thunderforest.allapi.cc"
+        }
+      ],
+      "destination": "/api/thunderforest"
     }
   ]
 }
