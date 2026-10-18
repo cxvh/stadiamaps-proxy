@@ -1,4 +1,3 @@
-// 域名白名单：可用环境变量 ALLOWED_DOMAINS 覆盖，逗号分隔，支持 *.example.com
 const DEFAULT_DOMAINS = '*.cnb.run,*.cxvh.com,*.allapi.cc';
 const ALLOWED = (process.env.ALLOWED_DOMAINS || DEFAULT_DOMAINS)
   .split(',')
@@ -20,28 +19,43 @@ function isAllowed(req) {
 }
 
 module.exports = async function handler(req, res) {
-  // CORS 头已由 vercel.json 的 headers 在边缘层统一添加，这里只处理预检
+  // 1. 处理预检请求
   if (req.method === 'OPTIONS') {
     res.status(204).end();
     return;
   }
 
+  // 2. 安全防盗链白名单校验
   if (!isAllowed(req)) {
     res.setHeader('Cache-Control', 'no-store');
     res.status(403).send('Forbidden');
     return;
   }
 
+  // 3. 读取 Vercel 后台设置的环境变量
   const apiKey = process.env.STADIAMAPS;
   if (!apiKey) {
     res.status(500).send('Missing STADIAMAPS environment variable');
     return;
   }
 
-  // 路径和参数原样透传，只追加 api_key
-  const [path, search] = req.url.split('?');
+  // 4. ✨ 核心路径清洗：无论内部路由如何变，只截取 /tiles/ 及其后面的部分
+  const [rawUrl, search] = req.url.split('?');
+  let cleanPath = rawUrl;
+  
+  if (rawUrl.includes('/tiles/')) {
+    cleanPath = '/tiles/' + rawUrl.split('/tiles/')[1];
+  } else {
+    // 兜底逻辑：如果找不到 /tiles/，则尝试去掉开头的 /api
+    cleanPath = rawUrl.replace(/^\/api/, '');
+    if (!cleanPath.startsWith('/tiles')) {
+      cleanPath = '/tiles' + cleanPath;
+    }
+  }
+
+  // 5. 组装最终的上游 Stadia Maps 真实瓦片地址并带上 API Key
   const target =
-    `https://tiles.stadiamaps.com${path.replace(/^\/api(?=\/)/, '')}` +
+    `https://stadiamaps.com${cleanPath}` +
     (search ? `?${search}&api_key=` : '?api_key=') +
     encodeURIComponent(apiKey);
 
@@ -49,11 +63,12 @@ module.exports = async function handler(req, res) {
     const upstream = await fetch(target, {
       headers: { 'User-Agent': req.headers['user-agent'] || 'stadiamaps-proxy' },
     });
+    
     res.status(upstream.status);
     const ct = upstream.headers.get('content-type');
     if (ct) res.setHeader('Content-Type', ct);
 
-    // 成功的瓦片走 Vercel 边缘缓存 + 浏览器缓存；失败不缓存
+    // 6. ✨ 边缘 CDN 缓存 + 浏览器本地双重强缓存
     if (upstream.ok) {
       res.setHeader(
         'Cache-Control',
@@ -63,9 +78,11 @@ module.exports = async function handler(req, res) {
       res.setHeader('Cache-Control', 'no-store');
     }
 
-    res.send(Buffer.from(await upstream.arrayBuffer()));
-  } catch {
+    // 7. 返回图片二进制流
+    const arrayBuffer = await upstream.arrayBuffer();
+    res.send(Buffer.from(arrayBuffer));
+  } catch (error) {
     res.setHeader('Cache-Control', 'no-store');
     res.status(502).send('Upstream request failed');
   }
-}
+};

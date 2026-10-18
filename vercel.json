@@ -11,6 +11,9 @@
     }
   ],
   "rewrites": [
-    { "source": "/:path*", "destination": "/api/:path*" }
+    {
+      "source": "/tiles/:path*",
+      "destination": "/api/tiles/:path*"
+    }
   ]
 }
