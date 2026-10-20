@@ -30,7 +30,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const apiKey = process.env.STADIAMAPS;
+  const apiKey = process.env.STADIAMAPS_MAP_KEY;
   if (!apiKey) {
     res.status(500).send('Missing STADIAMAPS environment variable');
     return;
