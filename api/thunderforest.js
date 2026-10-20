@@ -1,4 +1,4 @@
-const DEFAULT_DOMAINS = '*.cnb.run,*.cxvh.com,*.allapi.cc';
+const DEFAULT_DOMAINS = '*.cnb.run,*.cxvh.com';
 const ALLOWED = (process.env.ALLOWED_DOMAINS || DEFAULT_DOMAINS)
   .split(',')
   .map((s) => s.trim().toLowerCase())
