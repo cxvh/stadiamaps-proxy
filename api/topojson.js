@@ -88,7 +88,12 @@ module.exports = async function handler(req, res) {
       const layer = tile.layers[layerName];
       const features = [];
       for (let i = 0; i < layer.length; i++) {
-        features.push(layer.feature(i).toGeoJSON(Number(x), Number(y), Number(z)));
+        try {
+          features.push(layer.feature(i).toGeoJSON(Number(x), Number(y), Number(z)));
+        } catch (e) {
+          // 单个要素解析失败时跳过,不拖垮整个瓦片
+          console.error(`feature skipped: ${layerName}[${i}]: ${e && e.message}`);
+        }
       }
       geojsonLayers[layerName] = { type: 'FeatureCollection', features };
     }
@@ -103,7 +108,11 @@ module.exports = async function handler(req, res) {
     );
     res.send(JSON.stringify(topo));
   } catch (error) {
+    console.error('topojson convert failed:', error && (error.stack || error.message));
     res.setHeader('Cache-Control', 'no-store');
-    res.status(502).send('Upstream request failed');
+    res.status(502).send('Convert failed: ' + ((error && error.message) || String(error)));
   }
 };
+
+// 允许最长 60s 执行(z14 等大瓦片转换耗时可能超过默认值)
+module.exports.config = { maxDuration: 60 };
