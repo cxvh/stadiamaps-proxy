@@ -4,5 +4,10 @@
   "private": true,
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@mapbox/vector-tile": "^3.0.0",
+    "pbf": "^3.3.0",
+    "topojson-server": "^3.0.1"
   }
 }

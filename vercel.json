@@ -12,6 +12,16 @@
   ],
   "rewrites": [
     {
+      "source": "/data/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "stadiamaps.allapi.cc"
+        }
+      ],
+      "destination": "/api/topojson?path=:path*"
+    },
+    {
       "source": "/tiles/:path*",
       "has": [
         {
