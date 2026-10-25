@@ -27,7 +27,7 @@ module.exports = async function handler(req, res) {
   const key = 'uZNs91nMR-muUTP99MyBSg';
   const upstream = await fetch(
     `https://tile.nextzen.org/tilezen/vector/v1/all/${z}/${x}/${y.replace(/\.topojson$/, '')}.topojson?api_key=${encodeURIComponent(key)}`,
-    { headers: { Referer: 'https://openlayers.org/' } }
+    { headers: { Referer: 'https://openlayers.org/', Origin: 'https://openlayers.org' } }
   );
 
   res.status(upstream.status);
