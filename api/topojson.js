@@ -25,7 +25,6 @@ module.exports = async function handler(req, res) {
   if (!z || !x || !y) return res.status(404).end();
 
   const key = 'uZNs91nMR-muUTP99MyBSg';
-  /*
   const upstream = await fetch(
     `https://tile.nextzen.org/tilezen/vector/v1/all/${z}/${x}/${y.replace(/\.topojson$/, '')}.topojson?api_key=${encodeURIComponent(key)}`,
     { headers: { Referer: 'https://openlayers.org/', Origin: 'https://openlayers.org' } }
@@ -35,6 +34,5 @@ module.exports = async function handler(req, res) {
   const ct = upstream.headers.get('content-type');
   if (ct) res.setHeader('Content-Type', ct);
   res.send(Buffer.from(await upstream.arrayBuffer()));
-  */
- res.send(`https://tile.nextzen.org/tilezen/vector/v1/all/${z}/${x}/${y.replace(/\.topojson$/, '')}.topojson?api_key=${encodeURIComponent(key)}`);
+//  res.send(`https://tile.nextzen.org/tilezen/vector/v1/all/${z}/${x}/${y.replace(/\.topojson$/, '')}.topojson?api_key=${encodeURIComponent(key)}`);
 };
