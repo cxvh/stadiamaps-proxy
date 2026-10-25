@@ -12,14 +12,8 @@
   ],
   "rewrites": [
     {
-      "source": "/data/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "stadiamaps.allapi.cc"
-        }
-      ],
-      "destination": "/api/topojson?path=:path*"
+      "source": "/tilezen/vector/v1/all/:path*",
+      "destination": "/api/topojson?nextzen=:path*"
     },
     {
       "source": "/tiles/:path*",
